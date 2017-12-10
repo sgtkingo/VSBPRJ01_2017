@@ -83,7 +83,7 @@ void WriteMenu();
 void Title();
 string TransMounts(int MoonNumber);
 bool CheckData(string data, int pozition);
-
+bool CheckMonth(Domacnost d_data[], int Month, int Pozition);
 /**
  * @brief Funkce ukoncujici program pri kriticke chybe
  * @param code   Popis chyby
@@ -279,6 +279,10 @@ switch (options)
                     {
                     cout <<"Opakujte!\t Datum: ";cin>>temp;
                     }
+                    while (!CheckMonth(d_data,FindMonths(d_data,IDn),IDn))
+                    {
+                    cout <<"Opakujte!\t Datum: ";cin>>temp;
+                    }
                     d_data[IDn].datum=temp;
                     break;
                     }
@@ -336,10 +340,26 @@ for (int i=0;i<NumberOfID;i++)
  }
 return true;
 }
+/**
+ *  @brief Funkce pro kontrolu vstupnich/vzstupnich dat
+ *  @param data  I/O Data
+ *  @param pozition Pozice dat
+ */
 bool CheckData(string data, int pozition)
  {
 switch (pozition)
 {
+case 1:
+     {
+     for (int i=0;i<(int)data.size();i++)
+    {
+    if (data[i]<'0'||data[i]>'9')
+    return false;
+    }
+    if (atoi(data.c_str())<0)
+    return false;
+    break;
+     }
 case 2:
     {
     if (data.compare("Prijem")==0||data.compare("Vydej")==0)
@@ -376,6 +396,22 @@ case 5:
 }
 return true;
  }
+ /**
+ *  @brief Funkce pro kontrolu spravnosti mesicu
+ *  @param Domacnost d_data[]  Odkay na strukturu Domacnost
+ *  @param Month Cislo mesice
+ *  @param Pozition Cislo zaznamu
+ */
+bool CheckMonth(Domacnost d_data[], int Month, int Pozition)
+{
+ if (Pozition==0)return true;
+ for (int i=Pozition;i>0;i--)
+ {
+if (d_data[i].mesic<d_data[i-1].mesic)
+return false;
+ }
+ return true;
+}
  /**
  * @brief Funkce pro vytvoreni noveho souboru CSV
     @param adress Adresa souboru CSV
@@ -482,28 +518,48 @@ bool FillStruct(ifstream &streamfile, Domacnost d_data[])
         {
         case 1:
         {
+            if (!CheckData(temp,pozice))
+            error("File load error[type->ID error]");
+            if (i!=0)
+            {
+             for (int j=i-1;j>=0;j--)
+             {
+             if (atoi(temp.c_str())==d_data[i].ID)
+             error("File load error[type->ID error]");
+             }
+            }
             d_data[i].ID = atoi(temp.c_str());
             break;
         }
         case 2:
         {
+            if (!CheckData(temp,pozice))
+            error("File load error[type->P/V error]");
             d_data[i].pv = StrToBool(temp);
             break;
         }
         case 3:
         {
+            if (!CheckData(temp,pozice))
+            error("File load error[type->Kategory error]");
             d_data[i].kategorie = temp;
             break;
         }
         case 4:
         {
+            if (!CheckData(temp,pozice))
+            error("File load error[type->Castka error]");
             d_data[i].castka = atoi(temp.c_str());
             break;
         }
         case 5:
         {
+            if (!CheckData(temp,pozice))
+            error("File load error[type->Datum error]");
             d_data[i].datum = temp;
             d_data[i].mesic = FindMonths(d_data, i);
+            if (!CheckMonth(d_data,d_data[i].mesic,i))
+            error("File load error[type->Datum error]");
             break;
         }
         default:
@@ -574,12 +630,16 @@ void Find(string keyword,Domacnost d_data[],int NumberOfID)
  * @param Domacnost d_data[]  Odkaz na strukturu Domacnost
  * @param Memory_sort mem_data[]  Odkaz na strukturu Memory_sort
  * @param NumberOfMonths Pocet mesicu
+ * @param EndInt Konec intervalu vypisu zaznamu
+ * @param StartInt Pocatek intervalu vypisu zaznamu
+ * @param sump Suma prijmu
+ * @param sumv Suma vydaju
  */
-void sort_MaxToMin(Domacnost d_data[],Memory_sort mem_data[], int NumberOfMonths)
+void SortMaxToMin(Domacnost d_data[],Memory_sort mem_data[], int EndInt, int StartInt,int sump,int sumv)
 {
 int NumberOfID=0;
 int HelpCount=0;
-for (int m=0;m<NumberOfMonths;m++)
+for (int m=StartInt;m<EndInt;m++)
 {
  NumberOfID=mem_data[m].pocetID;
   int *memory=new int[NumberOfID];
@@ -605,12 +665,16 @@ sort(memory,memory+NumberOfID);
             cout << "\t\t" << d_data[j].castka;
             cout << "\t" << d_data[j].datum << endl;
     }
-    //cout<<i<<"\t"<<memory[i]<<"\t"<<d_data[j].ID<<"\t"<<d_data[j].castka<<endl;
      }
  }
   HelpCount=0;
   delete [] memory;
 }
+    Line();
+    cout << "\t\t\t\tCelkem prijem: \t" << sump << " ,-Kc" << endl;
+    cout << "\t\t\t\tCelkem vydaje: \t" << sumv << " ,-Kc" << endl;
+    cout << "\t\t\t\tSuma: \t" << sump - sumv << " ,-Kc" << endl;
+    Line();
  }
 /**
  * @brief Funkce pro pripravu struktury k pouziti
@@ -622,8 +686,6 @@ sort(memory,memory+NumberOfID);
 bool SetUpSortStruct(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int NumberOfMonths)
 {
     int n = 0;
-    //int *tempmem;
-    //bool flagmax=true;
     mem_data[0].ID_start = 0;
     for (int j = 0; j < NumberOfMonths; j++)
     {
@@ -642,6 +704,7 @@ bool SetUpSortStruct(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID,
     }
     return true;
 }
+/*
 /**
  * @brief Funkce pro vypis cele struktury
  * @param Domacnost d_data[]  Odkaz na strukturu Domacnost
@@ -651,6 +714,7 @@ bool SetUpSortStruct(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID,
  * @param suma_p Suma prijmu
  * @param suma_v Suma vydaju
  */
+ /*
 void WriteSortStruct(Domacnost d_data[], Memory_sort mem_data[], int endint, int startint, int suma_p, int suma_v)
 {
     for (int j = startint; j < endint; j++)
@@ -674,7 +738,7 @@ void WriteSortStruct(Domacnost d_data[], Memory_sort mem_data[], int endint, int
     cout << "\t\t\t\tCelkem vydaje: \t" << suma_v << " ,-Kc" << endl;
     cout << "\t\t\t\tSuma: \t" << suma_p - suma_v << " ,-Kc" << endl;
     Line();
-}
+}*/
 /**
  * @brief Funkce pro vypis struktury dle kategorii
  * @param Domacnost d_data[]  Odkaz na strukturu Domacnost
@@ -917,7 +981,7 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
         WriteMenu();
         cout << "Vyber moznost: ";
         cin >> options;
-        while (cin.fail() || options > 6 || options < 1)
+        while (cin.fail() || options > 7 || options < 1)
         {
             if (cin.fail())
             {
@@ -936,7 +1000,7 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
             start_int = 0;
             suma_p = SumPlus(d_data, NumberOfID);
             suma_v = SumMinus(d_data, NumberOfID);
-            WriteSortStruct(d_data, mem_data, end_int, start_int, suma_p, suma_v);
+            SortMaxToMin(d_data,mem_data,end_int, start_int, suma_p, suma_v);
             optionsS = SmallMenu();
             if (optionsS == 1)
             {
@@ -1002,7 +1066,7 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
             if((int)end_int>NumberOfMonths)end_int=NumberOfMonths;
             suma_p = SumPlus(d_data, mem_data[end_int-1].ID_stop+1,mem_data[start_int].ID_start);
             suma_v = SumMinus(d_data, mem_data[end_int-1].ID_stop+1,mem_data[start_int].ID_start);
-            WriteSortStruct(d_data, mem_data, end_int, start_int, suma_p, suma_v);
+            SortMaxToMin(d_data,mem_data,end_int, start_int, suma_p, suma_v);
             optionsS = SmallMenu();
             if (optionsS == 1)
             {
@@ -1077,6 +1141,11 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
             }
         }
         case 6:
+            {
+            cout << "Pracuji..." << endl;
+            return false;
+            }
+        case 7:
         {
             exit_f = true;
             break;
@@ -1102,7 +1171,8 @@ void WriteMenu()
     cout << "\t3.]Vypis dle intervalu." << endl;
     cout << "\t4.]Hledej." << endl;
     cout << "\t5.]Editace CSV souboru!" << endl;
-    cout << "\t6.]Konec." << endl;
+    cout << "\t6.]Reload/Edit/Make CSV" << endl;
+    cout << "\t7.]Konec." << endl;
 }
 /**
  * @brief Funkce pro vypis moznosti v Podmenu
@@ -1154,10 +1224,11 @@ int SmallMenu()
         return 0;
     }
 }
-void Title()
+/**
+ * @brief Funkce CSVChoise- vzpis moynosti prace s CSV soubory
+ */
+void CSVChoise()
 {
-    cout << "Vitejte v programu domaci ucetnictvi!" << endl;
-    cout << "Autor: Konecny Jiri, Verze: 1.0 2017" << endl;
     Line();
     cout << "Vyberte moznost:" << endl;
     cout << "\t1.]Nacist defaultni soubor CSV." << endl;
@@ -1165,14 +1236,21 @@ void Title()
     cout << "\t3.]Vytvorit novy soubor CSV." << endl;
 }
 /**
- * @brief Funkce Main- jadro programu
+ * @brief Funkce Main- jadro programu, prace se soubory, pouziti inicializacnich funkci
  */
 int main()
 {
     unsigned int options=0;
+    Domacnost *d_data;
+    Memory_sort *mem_data;
+    int program_last_id=0;
+    int program_last_mesic=0;
     string adress="";
     ifstream read_domacnost_data;
-    Title();
+    cout << "Vitejte v programu domaci ucetnictvi!" << endl;
+    cout << "Autor: Konecny Jiri, Verze: 1.0 2017" << endl;
+    do {
+    CSVChoise();
     cout << "Moznost:";
     cin >> options;
     while (cin.fail() || options > 3 || options < 1)
@@ -1244,21 +1322,18 @@ int main()
         error();
     }
 
-    int program_last_id = (NumberOfLine(read_domacnost_data));
+    program_last_id = NumberOfLine(read_domacnost_data);
     Domacnost *d_data = new Domacnost[program_last_id];
     FillStruct(read_domacnost_data, d_data);
 
-    int program_last_mesic = (d_data[program_last_id - 1].mesic);
+    program_last_mesic = (d_data[program_last_id - 1].mesic);
     Memory_sort *mem_data = new Memory_sort[program_last_mesic];
     SetUpSortStruct(d_data, mem_data, program_last_id, program_last_mesic);
-
-    sort_MaxToMin(d_data,mem_data,program_last_mesic);
-
-    Menu(d_data, mem_data, program_last_id, program_last_mesic,adress);
+    }
+    while (!Menu(d_data, mem_data, program_last_id, program_last_mesic,adress));
 
     delete[] d_data;
     delete[] mem_data;
-
     return 0;
 }
 /**
