@@ -1241,15 +1241,14 @@ void CSVChoise()
 int main()
 {
     unsigned int options=0;
-    Domacnost *d_data;
-    Memory_sort *mem_data;
     int program_last_id=0;
     int program_last_mesic=0;
+    bool Again=true;
     string adress="";
     ifstream read_domacnost_data;
     cout << "Vitejte v programu domaci ucetnictvi!" << endl;
     cout << "Autor: Konecny Jiri, Verze: 1.0 2017" << endl;
-    do {
+    while (Again) {
     CSVChoise();
     cout << "Moznost:";
     cin >> options;
@@ -1329,11 +1328,14 @@ int main()
     program_last_mesic = (d_data[program_last_id - 1].mesic);
     Memory_sort *mem_data = new Memory_sort[program_last_mesic];
     SetUpSortStruct(d_data, mem_data, program_last_id, program_last_mesic);
-    }
-    while (!Menu(d_data, mem_data, program_last_id, program_last_mesic,adress));
-
+    if (Menu(d_data, mem_data, program_last_id, program_last_mesic,adress))
+    {
+    Again=false;
     delete[] d_data;
     delete[] mem_data;
+    }
+    }
+
     return 0;
 }
 /**
