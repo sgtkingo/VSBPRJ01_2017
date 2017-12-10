@@ -70,7 +70,7 @@ int SumMinus(Domacnost d_data[], int End,int Start);
 int FindMonths(Domacnost d_data[], int Pozition);
 bool FillStruct(ifstream &streamfile, Domacnost d_data[]);
 bool SetUpSortStruct(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int NumberOfMonths);
-void WriteSortStruct(Domacnost d_data[], Memory_sort mem_data[], int endint, int startint, int suma_p, int suma_v);
+void SortMaxToMin(Domacnost d_data[],Memory_sort mem_data[], int EndInt, int StartInt,int sump,int sumv);
 void SortByCategory(Domacnost d_data[], int NumberOfID, string name, ofstream &html_out);
 void WriteSortByCategory(Domacnost d_data[], int NumberOfID);
 string NameOfFile();
@@ -80,10 +80,15 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
 int SmallMenu();
 void WriteSmallMenu();
 void WriteMenu();
-void Title();
+void CSVChoise();
+void MakeNewCSVRule();
 string TransMounts(int MoonNumber);
 bool CheckData(string data, int pozition);
-bool CheckMonth(Domacnost d_data[], int Month, int Pozition);
+bool CheckMonth(Domacnost d_data[], int Month, int Pozition, bool Mode);
+bool WriteEditCSV(Domacnost d_data[], int NumberOfID,string adress);
+bool EditCSV(Domacnost d_data[], int NumberOfID);
+bool MakeNewCSV(string adress);
+
 /**
  * @brief Funkce ukoncujici program pri kriticke chybe
  * @param code   Popis chyby
@@ -214,7 +219,7 @@ if (IDn==d_data[IDn].ID-1)cout <<"ID nalezeno!: "<<endl;
 else {cout <<"ID nenalezeno!"<<endl;return false;}
 Line();
 cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
-cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
+cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
 Line();
 while (1)
 {
@@ -279,7 +284,7 @@ switch (options)
                     {
                     cout <<"Opakujte!\t Datum: ";cin>>temp;
                     }
-                    while (!CheckMonth(d_data,FindMonths(d_data,IDn),IDn))
+                    while (!CheckMonth(d_data,FindMonths(d_data,IDn),IDn,true))
                     {
                     cout <<"Opakujte!\t Datum: ";cin>>temp;
                     }
@@ -293,7 +298,7 @@ cin>>AN;
 Line();
 if (cin.fail()||(AN!='A'&&AN!='a'))break;
 cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
-cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
+cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
 }
 cout << "Editovat dalsi zaznam? [A=ano]: ";
 cin>>AN;
@@ -347,6 +352,8 @@ return true;
  */
 bool CheckData(string data, int pozition)
  {
+ int TempData=0;
+ string TempString="";
 switch (pozition)
 {
 case 1:
@@ -391,6 +398,10 @@ case 5:
     if (data[2]!='.'||data[5]!='.')return false;
     if (data[3]<'0'||data[3]>'1')return false;
     if (data[4]<'0'||data[4]>'9')return false;
+    TempString+=data[3];
+    TempString+=data[4];
+    TempData=atoi(TempString.c_str());
+    if (TempData>12)return false;
     break;
     }
 }
@@ -400,17 +411,41 @@ return true;
  *  @brief Funkce pro kontrolu spravnosti mesicu
  *  @param Domacnost d_data[]  Odkay na strukturu Domacnost
  *  @param Month Cislo mesice
- *  @param Pozition Cislo zaznamu
+ *  @param Number Cislo/a zaznamu
+ *  @param Mode Prepinac modu pouziti
  */
-bool CheckMonth(Domacnost d_data[], int Month, int Pozition)
+bool CheckMonth(Domacnost d_data[], int Month, int Number, bool Mode)
 {
- if (Pozition==0)return true;
- for (int i=Pozition;i>0;i--)
+ if (Mode)
+ {
+if (Number==0)return true;
+ for (int i=Number;i>0;i--)
  {
 if (d_data[i].mesic<d_data[i-1].mesic)
 return false;
  }
  return true;
+ }
+ else
+ {
+   for (int i=0;i<Number;i++)
+ {
+ if (Month==d_data[i].mesic)return true;
+ }
+ return false;
+ }
+}
+/**
+ * @brief Funkce MakeNewCSVRule- vypis moznosti pravidel pri tvoreni noveho CSV souboru
+ */
+void MakeNewCSVRule()
+{
+    Line();
+    cout << "Pravidla pro tvorbu CSV souboru" << endl;
+    Line();
+    cout << "\t1.]Soubor musi byt tvoren v mesicni navaznosti(Leden,Unor...)!" << endl;
+    cout << "\t2.]Datum se zadava je formatu XX.YY.ZZZZ(29.12.1996!" << endl;
+    cout << "\t3.]Program kontroluje spravnost vstupu, presto dbej pokynu!" << endl;
 }
  /**
  * @brief Funkce pro vytvoreni noveho souboru CSV
@@ -418,6 +453,7 @@ return false;
  */
 bool MakeNewCSV(string adress)
 {
+    MakeNewCSVRule();
     char AN;
     string temp="";
     const int pozition=5;
@@ -524,7 +560,7 @@ bool FillStruct(ifstream &streamfile, Domacnost d_data[])
             {
              for (int j=i-1;j>=0;j--)
              {
-             if (atoi(temp.c_str())==d_data[i].ID)
+             if (atoi(temp.c_str())==d_data[j].ID)
              error("File load error[type->ID error]");
              }
             }
@@ -558,7 +594,7 @@ bool FillStruct(ifstream &streamfile, Domacnost d_data[])
             error("File load error[type->Datum error]");
             d_data[i].datum = temp;
             d_data[i].mesic = FindMonths(d_data, i);
-            if (!CheckMonth(d_data,d_data[i].mesic,i))
+            if (!CheckMonth(d_data,d_data[i].mesic,i,true))
             error("File load error[type->Datum error]");
             break;
         }
@@ -592,32 +628,32 @@ void Find(string keyword,Domacnost d_data[],int NumberOfID)
         {
             cout<<"Nalezena shoda!\t"<<"ID: "<<d_data[i].ID<<"\t ve slove: "<<d_data[i].datum<<endl;
             n++;
-            cout << "ID\tP/V\tKategorie\t\tCastka\tDatum" << endl;
-            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
+            cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
+            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
             Line();
         }
         if ((d_data[i].kategorie.find(keyword))!=string::npos)
         {
             cout<<"Nalezena shoda!\t"<<"ID: "<<d_data[i].ID<<"\t ve slove: "<<d_data[i].kategorie<<endl;
             n++;
-            cout << "ID\tP/V\tKategorie\t\tCastka\tDatum" << endl;
-            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
+            cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
+            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
             Line();
         }
         if ((TransMounts(d_data[i].mesic-1).find(keyword))!=string::npos)
         {
             cout<<"Nalezena shoda!\t"<<"ID: "<<d_data[i].ID<<"\t ve slove: "<<TransMounts(d_data[i].mesic-1)<<endl;
             n++;
-            cout << "ID\tP/V\tKategorie\t\tCastka\tDatum" << endl;
-            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
+            cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
+            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
             Line();
         }
         if ((BoolToStr(d_data[i].pv).find(keyword))!=string::npos)
         {
             cout<<"Nalezena shoda!\t"<<"ID: "<<d_data[i].ID<<"\t ve slove: "<<BoolToStr(d_data[i].pv)<<endl;
             n++;
-            cout << "ID\tP/V\tKategorie\t\tCastka\tDatum" << endl;
-            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
+            cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
+            cout<<d_data[i].ID<<"\t"<<BoolToStr(d_data[i].pv)<<"\t"<<d_data[i].kategorie<<"\t\t"<<d_data[i].castka<<"\t"<<d_data[i].datum<<endl;
             Line();
         }
     }
@@ -1088,6 +1124,7 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
         case 4:
         {
             cout << "Pracuji..." << endl;
+            LineAlt();
             string keyword="";
             cout<<"Zadej hledany vyraz: ";
             cin>>keyword;
@@ -1171,7 +1208,7 @@ void WriteMenu()
     cout << "\t3.]Vypis dle intervalu." << endl;
     cout << "\t4.]Hledej." << endl;
     cout << "\t5.]Editace CSV souboru!" << endl;
-    cout << "\t6.]Reload/Edit/Make CSV" << endl;
+    cout << "\t6.]Reload/Choice/Make CSV" << endl;
     cout << "\t7.]Konec." << endl;
 }
 /**
@@ -1277,6 +1314,7 @@ int main()
     }
     case 2:
     {
+        adress.clear();
         cout << "Zadejte nazev CSV souboru(adresar->..\\vstupnidata\\):";
         cin>>adress;
         if (adress.find(".csv") == string::npos)
@@ -1295,6 +1333,7 @@ int main()
     }
     case 3:
     {
+        adress.clear();
         adress+="..\\vstupnidata\\";
         string name;
         cout << "Zadej nazev CSV souboru :";
