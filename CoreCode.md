@@ -1,5 +1,3 @@
-# VSBPRJ01_2017
-Domaci ucetnictvi, sem. projekt
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -210,10 +208,12 @@ cin>>IDn;
             cout <<"Opakujte!\t ID: ";
             cin>>IDn;
             }
+Line();
 IDn--;
-if (IDn==d_data[IDn].ID-1)cout <<"ID nalezeno: "<<d_data[IDn].ID<<endl;
+if (IDn==d_data[IDn].ID-1)cout <<"ID nalezeno!: "<<endl;
 else {cout <<"ID nenalezeno!"<<endl;return false;}
-cout << "ID\tP/V\tKategorie\t\tCastka\tDatum" << endl;
+Line();
+cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
 cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
 Line();
 while (1)
@@ -288,6 +288,8 @@ cout << "Editovat dalsi polozku zaznamu "<<IDn+1<<" ? [A=ano]: ";
 cin>>AN;
 Line();
 if (cin.fail()||(AN!='A'&&AN!='a'))break;
+cout << "ID\tP/V\tKategorie\tCastka\tDatum" << endl;
+cout<<d_data[IDn].ID<<"\t"<<BoolToStr(d_data[IDn].pv)<<"\t"<<d_data[IDn].kategorie<<"\t"<<d_data[IDn].castka<<"\t"<<d_data[IDn].datum<<endl;
 }
 cout << "Editovat dalsi zaznam? [A=ano]: ";
 cin>>AN;
@@ -323,11 +325,12 @@ for (int i=0;i<NumberOfID;i++)
   {
    switch (j)
    {
-    case 1:{editcsv<<d_data[i].ID<<";";}
-    case 2:editcsv<<BoolToStr(d_data[i].pv)<<";";
-    case 3:editcsv<<d_data[i].kategorie<<";";
-    case 4:editcsv<<d_data[i].castka<<";";
-    case 5:editcsv<<d_data[i].datum<<"\n";
+    case 1:{if (i!=0)editcsv<<"\n";
+            editcsv<<d_data[i].ID<<";";break;}
+    case 2:{editcsv<<BoolToStr(d_data[i].pv)<<";";break;}
+    case 3:{editcsv<<d_data[i].kategorie<<";";break;}
+    case 4:{editcsv<<d_data[i].castka<<";";break;}
+    case 5:{editcsv<<d_data[i].datum;break;}
    }
   }
  }
@@ -637,43 +640,6 @@ bool SetUpSortStruct(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID,
         mem_data[j].pocetID = n;
         n = 0;
     }
-    /*
-    for (int m = 0; m < NumberOfMonths; m++)
-    {
-    Line();
-     tempmem=new int[mem_data[m].pocetID];
-     for (int i=mem_data[m].ID_start;i<=mem_data[m].ID_stop;i++)
-     {
-        tempmem[n]=i;
-        cout <<n<<": "<< tempmem[n]<<endl;
-      for (int j=i;j<=mem_data[m].ID_stop;j++)
-     {
-        if (d_data[j].castka>d_data[i].castka)
-        {
-            tempmem[n]=j;
-            cout <<n<<": "<<tempmem[n]<<endl;
-        }
-     }
-     n++;
-     }
-     n=0;
-     for (int i=0;i<mem_data[m].pocetID;i++)
-     {
-            n=tempmem[i];
-            cout << d_data[n].ID;
-            cout << "\t" << BoolToStr(d_data[n].pv);
-            cout << "\t" << d_data[n].kategorie;
-            cout << "\t\t" << d_data[n].castka;
-            cout << "\t" << d_data[n].datum << endl;
-     }
-        delete [] tempmem;
-    }
-    //cout <<j<<"\t Start:"<<mem_data[j].ID_start<<"\t Stop:"<<mem_data[j].ID_stop<<"\t Pocet:"<<mem_data[j].pocetID<<endl;
-
-    for (int j=0;j<pocet_mesicu;j++)
-    {
-    sort_MaxToMin(d_data,mem_data,mem_data[j].pocetID,j);
-    }*/
     return true;
 }
 /**
@@ -1085,6 +1051,7 @@ bool Menu(Domacnost d_data[], Memory_sort mem_data[], int NumberOfID, int Number
             cout << "Pracuji..." << endl;
             LineAlt();
             cout <<"Editor souboru CSV. Vstupni soubor:"<<adress<<endl;
+            LineAlt();
             if (EditCSV(d_data,NumberOfID))
             {
             if (WriteEditCSV(d_data,NumberOfID,adress))
@@ -1134,7 +1101,7 @@ void WriteMenu()
     cout << "\t2.]Vypis prehled vsech kategorii." << endl;
     cout << "\t3.]Vypis dle intervalu." << endl;
     cout << "\t4.]Hledej." << endl;
-    cout << "\t5.]Editace CSV souboru!." << endl;
+    cout << "\t5.]Editace CSV souboru!" << endl;
     cout << "\t6.]Konec." << endl;
 }
 /**
